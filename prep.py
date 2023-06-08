@@ -23,9 +23,10 @@ numeric = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level']
 categorical = ['gender', 'hypertension', 'heart_disease', 'diabetes']
 
 def prep_diabetes(diabetes):
-    diabetes.age = round(diabetes.age, 0).astype(int)
-    diabetes = diabetes.drop(columns='smoking_history')
-    diabetes = diabetes[diabetes.bmi != 27.32]
+    '''Takes in the diabetes dataset and prepares it for exploration and modeling.'''
+    diabetes.age = round(diabetes.age, 0).astype(int) #Rounds age to nearest integer
+    diabetes = diabetes.drop(columns='smoking_history') 
+    diabetes = diabetes[diabetes.bmi != 27.32] #Removes oddly prominent value of 27.32.
     diabetes = diabetes[diabetes.bmi < diabetes.bmi.quantile(.995)]
     diabetes = diabetes[diabetes.gender != 'Other']
     diabetes['gender_encoded'] = np.where(diabetes.gender == 'Female', 0, 1)
@@ -55,6 +56,9 @@ def split_data(df, target):
 # ----------------------------------------------- EXPLORE DATA -------------------------------------------------------
 
 def visualize_numerical(train):
+    '''Provides regression/scatterplots of all combinations of numerical data.
+    
+    Like a pairplot, but removes the unnecessary whitespace and does not include the histograms.'''
     pairwise_combinations = list(combinations(train[numeric].columns, 2))
 
     plt.figure(figsize=(15, 8))
@@ -69,6 +73,10 @@ def visualize_numerical(train):
 #-----------------------------------------------------------
 
 def visualize_cat_target(train):
+    '''Provides barplots for categorical variables against the target.
+    
+    Relabels 0s and 1s to No and Yes.'''
+
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     for i, col in enumerate(train[categorical]):
         if col != 'diabetes':
@@ -80,6 +88,8 @@ def visualize_cat_target(train):
 #-----------------------------------------------------------
 
 def visualize_multivariate(train):
+    '''Provides scatterplots for all combinations of numerical variables with diabetes used as the hue.'''
+
     pairwise_combinations = list(combinations(train[numeric].columns, 2))
 
     plt.figure(figsize=(15, 8))
@@ -94,6 +104,8 @@ def visualize_multivariate(train):
 # ----------------------------------------------- STATS TESTS -------------------------------------------------------
 
 def check_multicollinearity(train, list_to_check):
+    '''Takes in a dataframe and a list of lists (two variables in each) and returns a table showing their correlation and p-value.'''
+
     results = pd.DataFrame()
     for x in range(len(list_to_check)):
         corr, p = stats.pearsonr(train[list_to_check[x][0]], train[list_to_check[x][1]])
@@ -107,7 +119,10 @@ def check_multicollinearity(train, list_to_check):
 #-----------------------------------------------------------
 
 def check_comparison_of_means(train, numeric):
+    '''Takes in dataframe and list of numeric variables and returns a table showing whether variances are equal, as well at the t-statistic and p-value for an independent two-tailed, two-sample t-test.'''
+    
     results = pd.DataFrame()
+
     for x in train[numeric]:
         stat, pval = stats.levene(train[train.diabetes == 0][x], train[train.diabetes == 1][x])
         if pval < 0.05:
@@ -120,7 +135,7 @@ def check_comparison_of_means(train, numeric):
             results = pd.concat([results, result])
         else:
             variance = True
-            t, p = stats.ttest_ind(train[train.diabetes == 0][x], train[train.diabetes == 1][x], equal_var=False)
+            t, p = stats.ttest_ind(train[train.diabetes == 0][x], train[train.diabetes == 1][x], equal_var=True)
             result = pd.DataFrame({'variable': [x]
                                    ,'equal_variance': [variance]
                                    ,'t_stat': [t]
@@ -131,7 +146,10 @@ def check_comparison_of_means(train, numeric):
 #-----------------------------------------------------------
 
 def check_chi_squared(train, categorical):
+    "Takes in a dataframe and a list of categorical variables and returns a table with chi squared values and p-values for the variables against the target variable, diabetes."
+    
     results = pd.DataFrame()
+
     for x in train[categorical]:
         observed = pd.crosstab(train[x], train.diabetes)
         chi2, p, degf, expected = stats.chi2_contingency(observed)
@@ -144,6 +162,16 @@ def check_chi_squared(train, categorical):
 # ----------------------------------------------- MODELING -------------------------------------------------------
 
 def get_best_model(X_train, y_train, X_validate, y_validate):
+    '''Takes in an X_train, y_train, X_validate, and y_validate dataset, and runs them through the four classification models:
+
+    - Decision Tree
+    - Random Forest
+    - KNN 
+    - Logistic Regression
+
+    Each model is run using a range of hyperparameters. This function selects the best performing hyperparameter with the least difference between the train and validate sets.
+    
+    Returns a table with the model name, its hyperparameters, its train and validate scores, and the difference, and orders them by difference value.'''
 
     best_models = pd.DataFrame()
 
@@ -228,6 +256,10 @@ def get_best_model(X_train, y_train, X_validate, y_validate):
 #-----------------------------------------------------------
 
 def run_best_model(X_train, y_train, X_test, y_test):
+    '''Takes in an X_train, y_train, X_test, and y_test dataframes, and runs it through the best model, Decision Tree with max_depth = 10.
+    
+    Returns score of test dataset.'''
+    
     dtc = DecisionTreeClassifier(max_depth=10)
     dtc.fit(X_train, y_train)
     score = dtc.score(X_test, y_test)
