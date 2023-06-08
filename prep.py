@@ -5,6 +5,7 @@ import seaborn as sns
 import scipy.stats as stats
 
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import RobustScaler
 
 from itertools import combinations
 
@@ -24,12 +25,13 @@ categorical = ['gender', 'hypertension', 'heart_disease', 'diabetes']
 
 def prep_diabetes(diabetes):
     '''Takes in the diabetes dataset and prepares it for exploration and modeling.'''
+
     diabetes.age = round(diabetes.age, 0).astype(int) #Rounds age to nearest integer
     diabetes = diabetes.drop(columns='smoking_history') 
     diabetes = diabetes[diabetes.bmi != 27.32] #Removes oddly prominent value of 27.32.
-    diabetes = diabetes[diabetes.bmi < diabetes.bmi.quantile(.995)]
-    diabetes = diabetes[diabetes.gender != 'Other']
-    diabetes['gender_encoded'] = np.where(diabetes.gender == 'Female', 0, 1)
+    diabetes = diabetes[diabetes.bmi < diabetes.bmi.quantile(.995)] #Removes top 0.05% of BMI values
+    diabetes = diabetes[diabetes.gender != 'Other'] #Removes 'Other' under gender
+    diabetes['gender_encoded'] = np.where(diabetes.gender == 'Female', 0, 1) #Encoding for gender (a manual approach)
     return diabetes
 
 #-----------------------------------------------------------
@@ -51,18 +53,17 @@ def split_data(df, target):
     
     return train, validate, test
 
-
-
 # ----------------------------------------------- EXPLORE DATA -------------------------------------------------------
 
 def visualize_numerical(train):
     '''Provides regression/scatterplots of all combinations of numerical data.
     
-    Like a pairplot, but removes the unnecessary whitespace and does not include the histograms.'''
+    Like a pairplot, but removes the unnecessary whitespace and does not include the histograms on the diagonal.'''
     pairwise_combinations = list(combinations(train[numeric].columns, 2))
 
     plt.figure(figsize=(15, 8))
     x=1
+    plt.suptitle('Regression plots for all combinations of numeric data')
     for i in pairwise_combinations:
         plt.subplot(2,3,x)
         sns.regplot(data=train, x=i[0], y=i[1], scatter_kws={'alpha': 0.1}, line_kws={'color': 'red'})
@@ -78,12 +79,21 @@ def visualize_cat_target(train):
     Relabels 0s and 1s to No and Yes.'''
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    plt.suptitle('Barplots for categorical variables against Diabetes')
     for i, col in enumerate(train[categorical]):
         if col != 'diabetes':
             if train[col].dtype == 'O':
-                sns.barplot(ax=axes[i], data=train, x=col, y='diabetes')
-            else:
-                sns.barplot(ax=axes[i], data=train, x=col, y='diabetes').set_xticklabels(labels=['No','Yes'])
+                pct = pd.crosstab(train[col], train.diabetes)
+                pct.plot.bar(ax=axes[i])
+                axes[i].set_title(f'Bar Graph of {col}')
+                #axes.legend(labels=['No', 'Yes'])
+            else: 
+                pct = pd.crosstab(train[col], train.diabetes)
+                pct.plot.bar(ax=axes[i]).set_xticklabels(labels=['No', 'Yes'])
+                axes[i].set_title(f'Bar Graph of {col}')
+                #axes.legend(labels=['No', 'Yes'])
+    plt.tight_layout()
+    plt.show()
 
 #-----------------------------------------------------------
 
@@ -94,6 +104,7 @@ def visualize_multivariate(train):
 
     plt.figure(figsize=(15, 8))
     x=1
+    plt.suptitle('Multivariate Exploration using Diabetes as Hue')
     for i in pairwise_combinations:
         plt.subplot(2,3,x)
         sns.scatterplot(data=train, x=i[0], y=i[1], hue='diabetes', palette=['green', 'red'], alpha=0.1)
@@ -160,6 +171,33 @@ def check_chi_squared(train, categorical):
     return results.sort_values('p_value').reset_index(drop=True)
 
 # ----------------------------------------------- MODELING -------------------------------------------------------
+
+def scale_data(train,
+               validate,
+               test,
+               cols = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level']):
+    
+    '''Takes in train, validate, and test set, and outputs scaled versions of the columns that were sent in as dataframes'''
+
+    #Make copies for scaling
+    train_scaled = train.copy() 
+    validate_scaled = validate.copy()
+    test_scaled = test.copy()
+
+    #Initiate scaler, using Robust Scaler
+    scaler = RobustScaler()
+
+    #Fit to train only
+    scaler.fit(train[cols])
+
+    #Creates scaled dataframes of train, validate, and test. This will still preserve columns that were not sent in initially.
+    train_scaled[cols] = scaler.transform(train[cols])
+    validate_scaled[cols] = scaler.transform(validate[cols])
+    test_scaled[cols] = scaler.transform(test[cols])
+
+    return train_scaled, validate_scaled, test_scaled
+
+#-----------------------------------------------------------
 
 def get_best_model(X_train, y_train, X_validate, y_validate):
     '''Takes in an X_train, y_train, X_validate, and y_validate dataset, and runs them through the four classification models:
