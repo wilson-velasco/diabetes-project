@@ -91,3 +91,5 @@ Ensure that you have the csv file from Kaggle's website downloaded into your loc
 - Blood glucose levels should be standardized only to include tests in which the patients are fasting. Glucose levels drastically increase after meals, which can throw off the data when it comes to predicting diabetes. Alternatively, an additional column may be added stating if the measurement was taken while fasting (True) or not (False).
 
 <img src="https://github.com/wilson-velasco/diabetes-project/blob/main/Conclusion.png?raw=true />
+
+![alt text](https://github.com/wilson-velasco/diabetes-project/blob/main/Conclusion.png?raw=true)
