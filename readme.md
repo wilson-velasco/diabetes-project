@@ -1,3 +1,5 @@
+![alt text](https://github.com/wilson-velasco/diabetes-project/blob/main/Exec_sum.png?raw=true)
+
 # Project Description
 
 This <a href='https://www.kaggle.com/datasets/iammustafatz/diabetes-prediction-dataset'>dataset</a> was retrieved from Kaggle.com. It contains the medical and demographic data from patients, along with their diabetes status.
@@ -78,18 +80,8 @@ Ensure that you have the csv file from Kaggle's website downloaded into your loc
 - In a nutshell, the older you are and the higher your HbA1c and blood glucose levels are, the more likely you are to have diabetes.
 - Additionally, if you have hypertension and/or you have a heart disease, you are more likely to have diabetes.
 
-# Conclusion
 
-- Our best performing model, Decision Tree with max_depth of 10, outperformed our baseline by 7%, increasing accuracy to 97%.
-- All features were found to have some degree of correlation, with HbA1c the strongest of the numeric variables, and hypertension the strongest of the categorical variables.
-- During this second iteration, I scaled the data for use in the KNN model. As predicted, the second iteration improved the KNN model (first iteration had an accuracy of ~94%), but it did not perform better than our other models.
-- A cluster stood out in the multivariate graph containing HbA1c level, blood glucose level, and diabetes. However, sending in HbA1c and blood glucose together as a cluster did not improve the performance of our models, so I removed it from this presentation.
+![alt text](https://github.com/wilson-velasco/diabetes-project/blob/main/Conclusion.png?raw=true)
 
-# Recommendations
-
-- BMI is a notoriously outdated measurement in the medical field, as it does not take into account a patient's body composition, i.e. how much lean muscle mass they have. Collecting data on body fat percentage would probably be a better predictor of diabetes.
-- Blood glucose levels should be standardized only to include tests in which the patients are fasting. Glucose levels drastically increase after meals, which can throw off the data when it comes to predicting diabetes. Alternatively, an additional column may be added stating if the measurement was taken while fasting (True) or not (False).
-
-<img src="https://github.com/wilson-velasco/diabetes-project/blob/main/Conclusion.png?raw=true />
 
 ![alt text](https://github.com/wilson-velasco/diabetes-project/blob/main/Conclusion.png?raw=true)
